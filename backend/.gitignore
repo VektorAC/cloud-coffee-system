@@ -1,0 +1,26 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+.env
+.env.*
+.DS_Store
+
+# Logs
+logs
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Build
+dist/
+build/
+
+# Editor/OS
+.vscode/
+.idea/
+*.swp
+
+# Others
+coverage/
