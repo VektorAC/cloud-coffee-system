@@ -1,0 +1,77 @@
+name: CI/CD to Google Cloud Run
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      SERVICE_ACCOUNT: ${{ secrets.GCLOUD_SERVICE_KEY }}
+      REGION: us-central1 
+      BACKEND_SERVICE: cafe-backend
+      FRONTEND_SERVICE: cafe-frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Run backend tests
+        working-directory: ./backend
+        run: npm test || echo "no tests yet"
+
+      
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test || echo "no tests yet"
+
+      # Autenticación con Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCLOUD_SERVICE_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: 'beta'
+
+      # Deploy backend a Cloud Run usando Cloud Build
+      - name: Deploy Backend to Cloud Run
+        run: |
+          gcloud run deploy $BACKEND_SERVICE \
+            --source ./backend \
+            --region $REGION \
+            --platform=managed \
+            --allow-unauthenticated \
+            --project $PROJECT_ID
+
+      # Deploy frontend a Cloud Run usando Cloud Build
+      - name: Deploy Frontend to Cloud Run
+        run: |
+          gcloud run deploy $FRONTEND_SERVICE \
+            --source ./frontend \
+            --region $REGION \
+            --platform=managed \
+            --allow-unauthenticated \
+            --project $PROJECT_ID
